@@ -6,6 +6,8 @@ Written for security engineers, network/firewall teams, and POV delivery staff w
 
 > **Disclaimer:** Companion learning material — not official Cisco product documentation. Validate design, supported versions, and limits against your tenant and the [CSW 4.0 connector documentation](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/user-guide/4_0/cisco-secure-workload-user-guide-saas-v40/m-connectors.html) before production.
 
+**Executive summary (1 page, CISO / network leadership):** [`docs/EXECUTIVE-SUMMARY.md`](docs/EXECUTIVE-SUMMARY.md) · [**PDF**](docs/CSW-Secure-Firewall-Executive-Summary.pdf) · [**Word**](docs/CSW-Secure-Firewall-Executive-Summary.docx)
+
 **Full guide:** [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md) · **Architecture (customer diagrams):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · **Word/PDF:** [`docs/`](docs/)
 
 > Sources: [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html) · [Secure Workload & Firewall deep dive](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper)
@@ -345,6 +347,8 @@ For **host enforcement timing** validation after agents are deployed, use [**csw
 | Path | Description |
 |------|-------------|
 | `README.md` | Overview, step-by-step integration, video links, companion repos |
+| `docs/EXECUTIVE-SUMMARY.md` | **One-page executive summary** for CISO / network leadership |
+| `docs/CSW-Secure-Firewall-Executive-Summary.pdf` | PDF export of executive summary |
 | `docs/INTEGRATION-GUIDE.md` | Full customer reference (steps, FAQs, virtual patch, insertion options) |
 | `docs/ARCHITECTURE.md` | Mermaid architecture diagrams for customer presentations |
 | `docs/CSW-Secure-Firewall-Integration-Guide.docx` | Word export for customer hand-off |
