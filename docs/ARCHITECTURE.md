@@ -1,6 +1,10 @@
 # CSW + Secure Firewall — Architecture Reference
 
-Customer-facing architecture diagrams and design reference, derived from the [Cisco Secure Workload & Secure Firewall deep dive](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper) and the [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html).
+**Single source of truth for all architecture diagrams in this repo.** Other documents link here instead of repeating diagrams.
+
+**Video walkthrough:** Cisco TME **Jorge Quintero** — 3-part series on [@ciscosecureworkload](https://www.youtube.com/@ciscosecureworkload): [Part 1 — design](https://youtu.be/vdHjAl48SuI) · [Part 2 — deployment](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3 — operations](https://www.youtube.com/watch?v=X65mwN7kJGg)
+
+Derived from the [Cisco Secure Workload & Secure Firewall deep dive](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper) and the [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html).
 
 > **Disclaimer:** Companion material — validate against your CSW and FMC release notes before production.
 

@@ -29,72 +29,28 @@ Extended use cases from the white paper: **Virtual Patch** (CVE → FMC IPS) and
 
 ## Architecture
 
-```mermaid
-flowchart TB
-  subgraph Visibility["Visibility — NSEL"]
-    FTD["Secure Firewall FTD/ASA"]
-    SFC["Secure Firewall Connector<br/>Ingest · UDP 4729 · 45k fps"]
-    FTD -->|"NSEL NetFlow v9"| SFC
-  end
+**All diagrams are in one place:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — high-level integration, NSEL/FMC sequence flows, scope↔ACP mapping, insertion options (L2/L3/ACI/cloud), virtual patch, and rapid threat containment.
 
-  subgraph CSW["Cisco Secure Workload"]
-    ADM["Flow Analysis · ADM · Labels"]
-    PE["Policy Engine"]
-    SFC --> ADM --> PE
-  end
+| Path | Connector | Data direction |
+|------|-----------|----------------|
+| **Visibility (NSEL)** | Secure Firewall Connector on Ingest | Firewall → Ingest → CSW |
+| **Enforcement** | FMC Connector (Cisco Secure Firewall in UI) | CSW → FMC → FTD |
 
-  subgraph Enforcement["Enforcement — FMC"]
-    FMCc["FMC Connector · HTTPS 443"]
-    FMC["FMC / cdFMC · Dynamic Objects"]
-    PE -->|"Scope ↔ ACP · Topology-aware"| FMCc --> FMC
-    FMC -->|"auto-deploy"| FTD2["FTD devices"]
-  end
-
-  CMDB["CMDB · IPAM · Labels"] --> ADM
-```
-
-**Customer-ready diagrams** (sequence flows, scope mapping, insertion options, virtual patch, threat containment): [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-
-**SaaS CSW:** Secure Connector required between cloud tenant and on-prem Ingest/FMC.
-
-| Integration | Connector | Purpose | Data direction |
-|-------------|-----------|---------|----------------|
-| **Flow visibility (NetFlow / NSEL)** | **Secure Firewall Connector** on **Ingest appliance** | CSW sees flows from FTD/ASA without agents | Firewall → Ingest → CSW |
-| **Policy enforcement** | **FMC Connector** | CSW pushes segmentation rules to FTD via FMC | CSW → FMC → FTD |
-
-- **NetFlow connector** (switches/routers) is a **third** path — not for firewall NSEL.
-- **ACI integration** is separate — see [ACI and CSW Integration](https://www.youtube.com/watch?v=u7jh3Zw1hlg).
+**SaaS:** Secure Connector required between CSW cloud and on-prem Ingest/FMC. **NetFlow connector** (switches/routers) and **ACI connector** are separate paths — not FTD NSEL.
 
 ---
 
-## Architecture
+## Jorge Quintero — 3-part video series (start here)
 
-```text
-                    VISIBILITY PATH (NSEL)
-  ┌─────────────────┐     NSEL (NetFlow v9)      ┌──────────────────────┐
-  │ Secure Firewall │ ─────────────────────────▶ │ Secure Firewall       │
-  │ FTD / ASA       │     port 4729 typical       │ Connector (Docker on  │
-  └─────────────────┘                             │ Ingest appliance)     │
-                                                    └──────────┬───────────┘
-                                                               │
-                                                    Secure Connector (SaaS)
-                                                               ▼
-                                                    ┌──────────────────────┐
-                                                    │ Cisco Secure Workload │
-                                                    └──────────┬───────────┘
-                                                               │
-                    ENFORCEMENT PATH (FMC)                       ▼
-  ┌─────────────────┐     REST API + deploy      ┌──────────────────────┐
-  │ Secure Firewall │ ◀───────────────────────── │ FMC Connector         │
-  │ FTD (managed)    │     Dynamic objects + ACP   │ (CSW UI)              │
-  └─────────────────┘                             └──────────────────────┘
-           ▲
-  ┌────────┴────────┐
-  │ FMC / cdFMC      │
-  └─────────────────┘
-```
+Cisco TME **[Jorge Quintero](https://www.youtube.com/@ciscosecureworkload)** published the definitive walkthrough of CSW + Secure Firewall integration on the official Cisco Secure Workload channel. Watch in order before the step-by-step sections below.
 
-**SaaS CSW:** Secure Connector (or corporate proxy) is required between the Ingest appliance and the tenant.
+| Part | Focus | Watch |
+|------|--------|-------|
+| **1** | Introduction, design & architecture | [YouTube](https://youtu.be/vdHjAl48SuI) |
+| **2** | Deployment patterns & policy flow | [YouTube](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
+| **3** | Enforcement, telemetry & operations | [YouTube](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+
+**Also recommended:** [Secure Workload & Secure Firewall Integration Updates (2025–2026)](https://youtu.be/IEqbz44YvOQ) — current product behavior on the same channel.
 
 ---
 
@@ -155,7 +111,7 @@ service-policy flow_export_policy global
 
 **FTD:** Configure NSEL export toward the same Ingest endpoint per FMC/device template and the [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html).
 
-**Videos:** [Part 1 — design](https://youtu.be/vdHjAl48SuI) · [Part 2 — deployment](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3 — operations](https://www.youtube.com/watch?v=X65mwN7kJGg) · [**2025–2026 updates**](https://youtu.be/IEqbz44YvOQ)
+**Videos (Jorge Quintero):** [Part 1 — design](https://youtu.be/vdHjAl48SuI) · [Part 2 — deployment](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3 — operations](https://www.youtube.com/watch?v=X65mwN7kJGg) · [2025–2026 updates](https://youtu.be/IEqbz44YvOQ)
 
 ### Step A4 — Validate flow ingestion
 
@@ -240,17 +196,17 @@ service-policy flow_export_policy global
 
 ## Recommended video learning path
 
-| Order | Video | Link |
-|------:|-------|------|
-| 1 | Connector Overview | [Watch](https://youtu.be/H6QxuouzeC8) |
-| 2 | Connector Deployment | [Watch](https://youtu.be/H0as2ppS84Q) |
-| 3 | Firewall Integration Part 1 | [Watch](https://youtu.be/vdHjAl48SuI) |
-| 4 | Part 2 | [Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
-| 5 | Part 3 | [Watch](https://www.youtube.com/watch?v=X65mwN7kJGg) |
-| 6 | **2025–2026 integration updates** | [Watch](https://youtu.be/IEqbz44YvOQ) |
-| 7 | FMC + Edge / Ingest / Appliance | [Watch](https://youtu.be/13AZ33dpCxU) |
-| 8 | Where to Enforce | [Watch](https://youtu.be/urFJyDERMFs) |
-| 9 | Policy Enforcement Overview | [Watch](https://youtu.be/A8rOXQ-y4Cw) |
+| Order | Video | Presenter / channel | Link |
+|------:|-------|---------------------|------|
+| 1 | **Secure Workload & Firewall Integration — Part 1** (design & architecture) | Jorge Quintero · [@ciscosecureworkload](https://www.youtube.com/@ciscosecureworkload) | [Watch](https://youtu.be/vdHjAl48SuI) |
+| 2 | **Part 2** (deployment patterns & policy flow) | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
+| 3 | **Part 3** (enforcement, telemetry & operations) | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+| 4 | Secure Workload & Secure Firewall Integration Updates (2025–2026) | Cisco Secure Workload channel | [Watch](https://youtu.be/IEqbz44YvOQ) |
+| 5 | Connector Overview | Cisco Secure Workload channel | [Watch](https://youtu.be/H6QxuouzeC8) |
+| 6 | Connector Deployment | Cisco Secure Workload channel | [Watch](https://youtu.be/H0as2ppS84Q) |
+| 7 | FMC + Edge / Ingest / Appliance | Cisco Secure Workload channel | [Watch](https://youtu.be/13AZ33dpCxU) |
+| 8 | Where to Enforce | Cisco Secure Workload channel | [Watch](https://youtu.be/urFJyDERMFs) |
+| 9 | Policy Enforcement Overview | Cisco Secure Workload channel | [Watch](https://youtu.be/A8rOXQ-y4Cw) |
 
 ---
 
@@ -290,7 +246,7 @@ service-policy flow_export_policy global
 | **ACI Service Graph** | Intra + inter EPG/ESG | Full (FW in path) | ACI fabric estates |
 | **Cloud hub (AWS/Azure/GCP)** | Inter-VPC/VNet | Cloud logs + NSEL | Centralized cloud east-west |
 
-Details and diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Full guide: [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md)
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) only · Full guide: [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md)
 
 ---
 

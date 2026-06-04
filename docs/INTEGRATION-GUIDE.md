@@ -13,7 +13,23 @@ date: "2026-06-04"
 > - [FMC Integration Guide (Cisco.com)](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html)
 > - [Secure Workload & Firewall deep dive (secure.cisco.com)](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper)
 
-**Architecture diagrams:** [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — customer-shareable Mermaid diagrams.
+**Architecture diagrams:** [`ARCHITECTURE.md`](ARCHITECTURE.md) only — do not duplicate diagrams in other docs.
+
+---
+
+## Jorge Quintero — 3-part video series
+
+Cisco Technical Marketing Engineer **Jorge Quintero** ([Cisco Secure Workload YouTube channel](https://www.youtube.com/@ciscosecureworkload)) recorded the primary integration walkthrough. Watch **before** implementing.
+
+| Part | Title | Topics covered | Watch |
+|------|-------|----------------|-------|
+| **1** | Secure Workload & Firewall Integration | Introduction, design, high-level architecture, use cases | [YouTube](https://youtu.be/vdHjAl48SuI) |
+| **2** | Secure Workload & Firewall Integration | Deployment patterns, NSEL ingest, FMC connector setup, policy flow | [YouTube](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
+| **3** | Secure Workload & Firewall Integration | Enforcement, telemetry validation, operations, troubleshooting | [YouTube](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+
+**Follow-up:** [Secure Workload & Secure Firewall Integration Updates (2025–2026)](https://youtu.be/IEqbz44YvOQ) — latest behavior on the same channel.
+
+**Related Cisco Live session:** Jorge Quintero — *Solving the Segmentation Puzzle with Secure Workload* ([BRKSEC-2161](https://www.ciscolive.com/c/dam/r/ciscolive/global-event/docs/2024/pdf/BRKSEC-2161.pdf)).
 
 ---
 
@@ -41,41 +57,11 @@ CSW delivers three platform capabilities that intersect with Secure Firewall:
 
 ---
 
-## Architecture (customer reference)
+## Architecture
 
-### High-level — two paths, one platform
+See **[ARCHITECTURE.md](ARCHITECTURE.md)** for all customer-facing diagrams (high-level integration, NSEL/FMC sequences, scope mapping, insertion options, virtual patch, rapid threat containment). This guide covers steps and design detail only — no duplicate diagrams here.
 
-```mermaid
-flowchart TB
-  subgraph Visibility["Visibility — NSEL"]
-    FTD["Secure Firewall FTD/ASA"]
-    SFC["Secure Firewall Connector<br/>Ingest Appliance · UDP 4729"]
-    FTD -->|"NSEL NetFlow v9"| SFC
-  end
-
-  subgraph CSW["Cisco Secure Workload"]
-    ADM["Flow Analysis · ADM · Labels"]
-    PE["Policy Engine"]
-    SFC --> ADM --> PE
-  end
-
-  subgraph Enforcement["Enforcement — FMC"]
-    FMCc["FMC Connector · HTTPS 443"]
-    FMC["FMC / cdFMC"]
-    PE -->|"Dynamic Objects + ACP rules"| FMCc --> FMC
-    FMC -->|"auto-deploy"| FTD2["FTD devices"]
-  end
-
-  CMDB["CMDB · IPAM · Manual labels"] --> ADM
-```
-
-**SaaS CSW:** **Secure Connector** tunnels traffic between CSW cloud, Ingest appliance, and on-prem FMC.
-
-See [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for sequence diagrams, scope mapping, insertion options, virtual patch, and threat containment flows.
-
----
-
-## Two connectors — do not mix them
+### Two connectors — do not mix them
 
 | Integration | Connector | Purpose | Data direction |
 |-------------|-----------|---------|----------------|
@@ -178,7 +164,7 @@ service-policy flow_export_policy global
 
 **FTD:** Configure NSEL export via FMC/device template — [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html).
 
-**Videos:** [Part 1](https://youtu.be/vdHjAl48SuI) · [Part 2](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3](https://www.youtube.com/watch?v=X65mwN7kJGg) · [**2025–2026 updates**](https://youtu.be/IEqbz44YvOQ)
+**Videos (Jorge Quintero, 3-part series):** [Part 1](https://youtu.be/vdHjAl48SuI) · [Part 2](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3](https://www.youtube.com/watch?v=X65mwN7kJGg) · [2025–2026 updates](https://youtu.be/IEqbz44YvOQ)
 
 ### Step A4 — Validate flow ingestion
 
@@ -360,17 +346,17 @@ All patterns support **dual management**: CSW east-west + FMC north-south on the
 
 ## Recommended video learning path
 
-| Order | Video | Link |
-|------:|-------|------|
-| 1 | Connector Overview | [Watch](https://youtu.be/H6QxuouzeC8) |
-| 2 | Connector Deployment | [Watch](https://youtu.be/H0as2ppS84Q) |
-| 3 | Firewall Integration Part 1 | [Watch](https://youtu.be/vdHjAl48SuI) |
-| 4 | Part 2 | [Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
-| 5 | Part 3 | [Watch](https://www.youtube.com/watch?v=X65mwN7kJGg) |
-| 6 | **2025–2026 integration updates** | [Watch](https://youtu.be/IEqbz44YvOQ) |
-| 7 | FMC + Edge / Ingest / Appliance | [Watch](https://youtu.be/13AZ33dpCxU) |
-| 8 | Where to Enforce | [Watch](https://youtu.be/urFJyDERMFs) |
-| 9 | Policy Enforcement Overview | [Watch](https://youtu.be/A8rOXQ-y4Cw) |
+| Order | Video | Presenter / channel | Link |
+|------:|-------|---------------------|------|
+| 1 | **Secure Workload & Firewall Integration — Part 1** | Jorge Quintero · [@ciscosecureworkload](https://www.youtube.com/@ciscosecureworkload) | [Watch](https://youtu.be/vdHjAl48SuI) |
+| 2 | **Part 2** — deployment & policy flow | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
+| 3 | **Part 3** — enforcement & operations | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+| 4 | Integration Updates (2025–2026) | Cisco Secure Workload channel | [Watch](https://youtu.be/IEqbz44YvOQ) |
+| 5 | Connector Overview | Cisco Secure Workload channel | [Watch](https://youtu.be/H6QxuouzeC8) |
+| 6 | Connector Deployment | Cisco Secure Workload channel | [Watch](https://youtu.be/H0as2ppS84Q) |
+| 7 | FMC + Edge / Ingest / Appliance | Cisco Secure Workload channel | [Watch](https://youtu.be/13AZ33dpCxU) |
+| 8 | Where to Enforce | Cisco Secure Workload channel | [Watch](https://youtu.be/urFJyDERMFs) |
+| 9 | Policy Enforcement Overview | Cisco Secure Workload channel | [Watch](https://youtu.be/A8rOXQ-y4Cw) |
 
 ---
 
