@@ -25,7 +25,7 @@ Cisco Technical Marketing Engineer **Jorge Quintero** ([Cisco Secure Workload Yo
 |------|-------|----------------|-------|
 | **1** | Secure Workload & Firewall Integration | Introduction, design, high-level architecture, use cases | [YouTube](https://youtu.be/vdHjAl48SuI) |
 | **2** | Secure Workload & Firewall Integration | Deployment patterns, NSEL ingest, FMC connector setup, policy flow | [YouTube](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
-| **3** | Secure Workload & Firewall Integration | Enforcement, telemetry validation, operations, troubleshooting | [YouTube](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+| **3** | Secure Workload & Firewall Integration | Enforcement, telemetry validation, operations, troubleshooting | *(original link unavailable — search [Cisco Secure Workload channel](https://www.youtube.com/@ciscosecureworkload))* |
 
 **Follow-up:** [Secure Workload & Secure Firewall Integration Updates (2025–2026)](https://youtu.be/IEqbz44YvOQ) — latest behavior on the same channel.
 
@@ -142,7 +142,7 @@ This drives whether you use **L2 transparent** (fine-grained), **L3 routed** (fa
 3. **Enable** on **Ingest appliance** (not Edge-only).
 4. Record connector **ID** and **IP:port** from connector details page.
 
-**Limits:** **1** Secure Firewall connector per Ingest appliance; **10** per tenant.
+**Limits (CSW 4.0):** max **100** Secure Firewall connectors per Ingest appliance; **100** per tenant; **100** across the entire cluster.
 
 ### Step A3 — Enable NSEL on Secure Firewall
 
@@ -162,9 +162,73 @@ policy-map flow_export_policy
 service-policy flow_export_policy global
 ```
 
-**FTD:** Configure NSEL export via FMC/device template — [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html).
+**Videos (Jorge Quintero, 3-part series):** [Part 1](https://youtu.be/vdHjAl48SuI) · [Part 2](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [2025–2026 updates](https://youtu.be/IEqbz44YvOQ)
 
-**Videos (Jorge Quintero, 3-part series):** [Part 1](https://youtu.be/vdHjAl48SuI) · [Part 2](https://www.youtube.com/watch?v=xpbg3s0vrcI) · [Part 3](https://www.youtube.com/watch?v=X65mwN7kJGg) · [2025–2026 updates](https://youtu.be/IEqbz44YvOQ)
+### Step A3b — FTD NSEL via FlexConfig (FMC UI)
+
+FTD does **not** have a direct CLI like ASA. NSEL export is configured through **FlexConfig** in FMC. Follow these steps exactly — Part 2 of the Jorge Quintero series ([Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI)) walks through this configuration.
+
+#### 1 — Create a FlexConfig Text Object
+
+1. In FMC, navigate to **Objects → Object Management → FlexConfig → Text Objects**.
+2. Click **Add Text Object**.
+3. Name it (e.g., `CSW_NSEL_Config`).
+4. Paste the NSEL configuration (replace `<INTERFACE>` with the FTD interface facing the Ingest appliance, e.g., `inside`, and `<INGEST_CONNECTOR_IP>` with the Ingest connector IP):
+
+```text
+flow-export destination <INTERFACE> <INGEST_CONNECTOR_IP> 4729
+flow-export template timeout-rate 1
+```
+
+5. Click **Save**.
+
+> **Note:** The `service-policy global_policy global` is already active by default on FTD — do not add it again via FlexConfig or you will get a conflict.
+
+#### 2 — Create a FlexConfig Object (prepended)
+
+1. Navigate to **Objects → Object Management → FlexConfig → FlexConfig Objects**.
+2. Click **Add FlexConfig Object**.
+3. Name it (e.g., `CSW_NSEL_Export`), set type to **Prepended**.
+4. In the body, reference your text object using the FMC variable syntax:
+
+```text
+flow-export destination $CSW_NSEL_Config_line1
+flow-export template timeout-rate 1
+policy-map global_policy
+  class class-default
+    flow-export event-type flow-create destination <INGEST_CONNECTOR_IP>
+    flow-export event-type flow-teardown destination <INGEST_CONNECTOR_IP>
+    flow-export event-type flow-denied destination <INGEST_CONNECTOR_IP>
+    flow-export event-type flow-update destination <INGEST_CONNECTOR_IP>
+    user-statistics accounting
+```
+
+> **Tip:** Many engineers paste the full ASA-style config directly as the FlexConfig Object body (without text object variables) since it is static per device. That is acceptable — just substitute `<INTERFACE>` and `<INGEST_CONNECTOR_IP>` with literal values for each device.
+
+#### 3 — Create / update a FlexConfig Policy
+
+1. Navigate to **Devices → FlexConfig**.
+2. Click **New Policy** (or open the existing FlexConfig policy assigned to your FTDs).
+3. Add `CSW_NSEL_Export` to the **Prepend** list.
+4. Assign the policy to the target FTD device(s) under **Policy Assignments**.
+5. Click **Save**.
+
+#### 4 — Deploy to FTD
+
+1. **Deploy → Deployment** in FMC.
+2. Select the FTD device(s) and **Deploy**.
+3. After deployment, verify with:
+   - FTD CLI (via FMC **Devices → Device Management → CLI**): `show flow-export counters`
+   - CSW **Flow Analysis** — flows from the FTD IP should appear within ~2 minutes.
+
+#### FTD version notes
+
+| FTD version | NSEL configuration method |
+|-------------|--------------------------|
+| **< 7.4** | FlexConfig only (as above) |
+| **7.4+** | **Platform Settings → NetFlow** in FMC may expose a native UI — check your FMC release notes; FlexConfig remains supported as a fallback |
+
+**Reference:** [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html) (FlexConfig commands match ASA syntax)
 
 ### Step A4 — Validate flow ingestion
 
@@ -350,7 +414,7 @@ All patterns support **dual management**: CSW east-west + FMC north-south on the
 |------:|-------|---------------------|------|
 | 1 | **Secure Workload & Firewall Integration — Part 1** | Jorge Quintero · [@ciscosecureworkload](https://www.youtube.com/@ciscosecureworkload) | [Watch](https://youtu.be/vdHjAl48SuI) |
 | 2 | **Part 2** — deployment & policy flow | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI) |
-| 3 | **Part 3** — enforcement & operations | Jorge Quintero | [Watch](https://www.youtube.com/watch?v=X65mwN7kJGg) |
+| 3 | **Part 3** — enforcement & operations | Jorge Quintero | *(original link unavailable — search [channel](https://www.youtube.com/@ciscosecureworkload))* |
 | 4 | Integration Updates (2025–2026) | Cisco Secure Workload channel | [Watch](https://youtu.be/IEqbz44YvOQ) |
 | 5 | Connector Overview | Cisco Secure Workload channel | [Watch](https://youtu.be/H6QxuouzeC8) |
 | 6 | Connector Deployment | Cisco Secure Workload channel | [Watch](https://youtu.be/H0as2ppS84Q) |
