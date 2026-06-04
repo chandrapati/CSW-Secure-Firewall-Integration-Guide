@@ -303,7 +303,7 @@ This repo is the **Secure Firewall integration** chapter of the public CSW pract
 | [**CSW-ServiceNow-Connector-Guide**](https://github.com/chandrapati/CSW-ServiceNow-Connector-Guide) | ServiceNow inventory enrichment connector | CMDB-driven labels |
 | [**csw-splunk-integration**](https://github.com/chandrapati/csw-splunk-integration) | CSW → Splunk via Syslog + Security Cloud App | SOC / SIEM integration |
 | [**CSW-Compliance-Mapping**](https://github.com/chandrapati/CSW-Compliance-Mapping) | 30+ framework mappings (HIPAA, PCI, NIST, ISO, etc.) | GRC / audit / CISO reporting |
-| [**CSW_POV_Template**](https://github.com/chandrapati/CSW_POV_Template) | Reusable POV engagement toolkit | Starting a new POV |
+| [**CSW-Operations-Toolkit**](https://github.com/chandrapati/CSW-Operations-Toolkit) | Reusable POV engagement toolkit | Starting a new POV |
 | [**csw-logs-check**](https://github.com/chandrapati/csw-logs-check) | Cursor skill: analyze agent diagnostic bundles | Host enforce timing / validation |
 | [**csw_blast_radius_demo**](https://github.com/chandrapati/csw_blast_radius_demo) | Hands-on blast-radius reduction demo | Customer demos and labs |
 | [**CSW-SE-Helper-Repo**](https://github.com/chandrapati/CSW-SE-Helper-Repo) | SE utilities and scratch tooling | Internal SE workflows |
@@ -318,7 +318,7 @@ CSW-User-Education
     → CSW-Policy-Lifecycle
     → csw-splunk-integration
     → CSW-Compliance-Mapping
-    → CSW_POV_Template (wrap-up)
+    → CSW-Operations-Toolkit (wrap-up)
 ```
 
 For **host enforcement timing** validation after agents are deployed, use [**csw-logs-check**](https://github.com/chandrapati/csw-logs-check) alongside this guide when both agents and firewalls are in the same POV.
