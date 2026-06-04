@@ -301,6 +301,7 @@ This repo is the **Secure Firewall integration** chapter of the public CSW pract
 | [**CSW-Policy-Lifecycle**](https://github.com/chandrapati/CSW-Policy-Lifecycle) | ADM → Monitor → Simulate → Enforce + day-2 ops | After visibility; before enforce |
 | [**CSW-Identity-Integration-Guide**](https://github.com/chandrapati/CSW-Identity-Integration-Guide) | AD, Entra ID, DC user-identity reporting | User/group labels in policy |
 | [**CSW-ServiceNow-Connector-Guide**](https://github.com/chandrapati/CSW-ServiceNow-Connector-Guide) | ServiceNow inventory enrichment connector | CMDB-driven labels |
+| [**csw-ise-integration**](https://github.com/chandrapati/csw-ise-integration) | ISE/pxGrid integration: user-identity–aware microsegmentation via pxGrid 2.0 | Identity & Zero Trust |
 | [**csw-splunk-integration**](https://github.com/chandrapati/csw-splunk-integration) | CSW → Splunk via Syslog + Security Cloud App | SOC / SIEM integration |
 | [**CSW-Compliance-Mapping**](https://github.com/chandrapati/CSW-Compliance-Mapping) | 30+ framework mappings (HIPAA, PCI, NIST, ISO, etc.) | GRC / audit / CISO reporting |
 | [**CSW-Operations-Toolkit**](https://github.com/chandrapati/CSW-Operations-Toolkit) | Reusable POV engagement toolkit | Starting a new POV |
