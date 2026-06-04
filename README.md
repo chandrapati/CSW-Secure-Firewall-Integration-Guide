@@ -6,11 +6,54 @@ Written for security engineers, network/firewall teams, and POV delivery staff w
 
 > **Disclaimer:** Companion learning material — not official Cisco product documentation. Validate design, supported versions, and limits against your tenant and the [CSW 4.0 connector documentation](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/user-guide/4_0/cisco-secure-workload-user-guide-saas-v40/m-connectors.html) before production.
 
-**Full guide (Markdown):** [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md) · **Word:** [`docs/CSW-Secure-Firewall-Integration-Guide.docx`](docs/CSW-Secure-Firewall-Integration-Guide.docx) · **PDF:** [`docs/CSW-Secure-Firewall-Integration-Guide.pdf`](docs/CSW-Secure-Firewall-Integration-Guide.pdf)
+**Full guide:** [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md) · **Architecture (customer diagrams):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · **Word/PDF:** [`docs/`](docs/)
+
+> Sources: [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html) · [Secure Workload & Firewall deep dive](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper)
 
 ---
 
-## Two integrations — do not mix them
+## Executive summary
+
+CSW + Secure Firewall unifies **agentless east-west microsegmentation** for workloads that cannot run host agents (legacy OS, appliances, restricted environments). Two connectors work together:
+
+| Path | Connector | Outcome |
+|------|-----------|---------|
+| **Visibility** | Secure Firewall Connector (NSEL on Ingest) | Discover flows, run ADM, model policy — no agents |
+| **Enforcement** | FMC Connector | Push L3/L4 rules + Dynamic Objects to FTD via FMC |
+
+Extended use cases from the white paper: **Virtual Patch** (CVE → FMC IPS) and **Rapid Threat Containment** (FMC Remediation Module → CSW quarantine guardrails).
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Visibility["Visibility — NSEL"]
+    FTD["Secure Firewall FTD/ASA"]
+    SFC["Secure Firewall Connector<br/>Ingest · UDP 4729 · 45k fps"]
+    FTD -->|"NSEL NetFlow v9"| SFC
+  end
+
+  subgraph CSW["Cisco Secure Workload"]
+    ADM["Flow Analysis · ADM · Labels"]
+    PE["Policy Engine"]
+    SFC --> ADM --> PE
+  end
+
+  subgraph Enforcement["Enforcement — FMC"]
+    FMCc["FMC Connector · HTTPS 443"]
+    FMC["FMC / cdFMC · Dynamic Objects"]
+    PE -->|"Scope ↔ ACP · Topology-aware"| FMCc --> FMC
+    FMC -->|"auto-deploy"| FTD2["FTD devices"]
+  end
+
+  CMDB["CMDB · IPAM · Labels"] --> ADM
+```
+
+**Customer-ready diagrams** (sequence flows, scope mapping, insertion options, virtual patch, threat containment): [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+
+**SaaS CSW:** Secure Connector required between cloud tenant and on-prem Ingest/FMC.
 
 | Integration | Connector | Purpose | Data direction |
 |-------------|-----------|---------|----------------|
@@ -144,23 +187,32 @@ service-policy flow_export_policy global
 
 ### Step B2 — Create FMC Connector in CSW
 
-1. **Manage → Workloads → Connectors → Cisco Secure Firewall Management Center Connector**.
-2. Provide FMC **hostname** and **REST API credentials** (admin privileges).
-3. Complete connectivity test; resolve proxy/TLS if needed.
-4. Full procedure: [CSW and FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/guide/b-csw-fmc-integration-guide.html).
+1. **Manage → Workloads → Connectors → Firewall → Cisco Secure Firewall**.
+2. Enter FMC **hostname**, **REST API credentials** (admin), **CA certificate** (or Disable SSL), **Secure Connector** if SaaS.
+3. Verify **Event Log** tab after **Create**.
+
+| FMC field | Notes |
+|-----------|-------|
+| Server IP/FQDN | FMC primary; include **standby FMC IP** for HA |
+| Port | **443** (HTTPS REST API) |
+| Proxy | `<host>:<port>` if required |
+
+4. Full procedure: [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html).
 
 ### Step B3 — Map scope to Access Control Policy
 
-1. Map **Scope → ACP** on the FMC connector.
-2. Choose enforcement mode:
+1. **Segmentation** tab → **+ Add** → select **ACP** and **one Scope** (1:1 only).
+2. **Use Secure Workload Catch-All** — CSW catch-all or FMC default action.
+3. **Enforcement Mode:** **Merge** (dual-management) or **Override**.
+4. Set **Absolute/Default** rule priority (above/below Mandatory/Default sections).
+5. Enable **Topology Awareness** — rules only on firewalls in traffic path.
+
+**CSW creates in FMC:** `Workload_golden__`, `Workload__`, `Workload_ca__` rules; `WorkloadObj__` dynamic objects. Do not edit these in FMC.
 
 | Mode | Behavior |
 |------|----------|
-| **Merge** | CSW rules coexist with existing FMC rules |
-| **Override** | CSW rules take precedence in the mapped section |
-| **Rule ordering** | CSW rules at **top** or **bottom** of ACP |
-
-3. Enable **Topology Awareness** so CSW pushes only to firewalls on the traffic path.
+| **Merge** | CSW rules coexist with FMC rules; configure top/bottom priority |
+| **Override** | CSW replaces user-created rules in mapped sections |
 
 **Videos:** [Policy Enforcement Overview](https://youtu.be/A8rOXQ-y4Cw) · [Where to Enforce](https://youtu.be/urFJyDERMFs) · [Policy Ordering](https://youtu.be/fG1Kn1C7QRM)
 
@@ -227,13 +279,27 @@ service-policy flow_export_policy global
 
 ---
 
+## Firewall insertion options (summary)
+
+| Mode | Segmentation | NSEL | Best for |
+|------|--------------|------|----------|
+| **L2 Transparent** | Intra + inter-subnet | Full | Fine-grained, legacy OS |
+| **L3 Routed** | Inter-subnet only | Inter-subnet only | Quick zone segmentation |
+| **ACI Service Graph** | Intra + inter EPG/ESG | Full (FW in path) | ACI fabric estates |
+| **Cloud hub (AWS/Azure/GCP)** | Inter-VPC/VNet | Cloud logs + NSEL | Centralized cloud east-west |
+
+Details and diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Full guide: [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md)
+
+---
+
 ## Official Cisco documentation
 
 | Document | URL |
 |----------|-----|
+| **FMC Integration Guide** | [cisco-secure-workload-and-fmc-integration-guide.html](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html) |
+| **Deep dive white paper** | [secure-workload-whitepaper](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper) |
 | CSW 4.0 SaaS — Connectors | [m-connectors.html](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/user-guide/4_0/cisco-secure-workload-user-guide-saas-v40/m-connectors.html) |
-| CSW + Secure Firewall white paper | [sec-workload-firewall-wp.html](https://www.cisco.com/c/en/us/products/collateral/security/secure-workload/sec-workload-firewall-wp.html) |
-| CSW + FMC integration guide | [b-csw-fmc-integration-guide.html](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/guide/b-csw-fmc-integration-guide.html) |
+| Marketing white paper | [sec-workload-firewall-wp.html](https://www.cisco.com/c/en/us/products/collateral/security/secure-workload/sec-workload-firewall-wp.html) |
 | ASA NSEL configuration | [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html) |
 
 ---
@@ -279,7 +345,8 @@ For **host enforcement timing** validation after agents are deployed, use [**csw
 | Path | Description |
 |------|-------------|
 | `README.md` | Overview, step-by-step integration, video links, companion repos |
-| `docs/INTEGRATION-GUIDE.md` | Full Markdown guide (same content, expanded sections) |
+| `docs/INTEGRATION-GUIDE.md` | Full customer reference (steps, FAQs, virtual patch, insertion options) |
+| `docs/ARCHITECTURE.md` | Mermaid architecture diagrams for customer presentations |
 | `docs/CSW-Secure-Firewall-Integration-Guide.docx` | Word export for customer hand-off |
 | `docs/CSW-Secure-Firewall-Integration-Guide.pdf` | PDF export |
 | `LICENSE` | MIT |
