@@ -8,7 +8,7 @@ Written for security engineers, network/firewall teams, and POV delivery staff w
 
 **Executive summary (1 page, CISO / network leadership):** [`docs/EXECUTIVE-SUMMARY.md`](docs/EXECUTIVE-SUMMARY.md) · [**PDF**](docs/CSW-Secure-Firewall-Executive-Summary.pdf) · [**Word**](docs/CSW-Secure-Firewall-Executive-Summary.docx)
 
-**Full guide:** [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md) · **Architecture (customer diagrams):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · **Word/PDF:** [`docs/`](docs/)
+**Full guide:** [`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md) · **Scope / query / ACP mapping:** [`docs/SCOPE-ACP-QUERY-MAPPING.md`](docs/SCOPE-ACP-QUERY-MAPPING.md) · **Architecture:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · **Word/PDF:** [`docs/`](docs/)
 
 > Sources: [FMC Integration Guide](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html) · [Secure Workload & Firewall deep dive](https://secure.cisco.com/secure-workload/docs/secure-workload-whitepaper)
 
@@ -52,9 +52,23 @@ Cisco TME **[Jorge Quintero](https://www.youtube.com/@ciscosecureworkload)** pub
 
 **Also recommended:** [Secure Workload & Secure Firewall Integration Updates (2025–2026)](https://youtu.be/IEqbz44YvOQ) — current product behavior on the same channel.
 
+**Scope → ACP mapping detail:** [`docs/SCOPE-ACP-QUERY-MAPPING.md`](docs/SCOPE-ACP-QUERY-MAPPING.md)
+
 ---
 
-## Prerequisites
+**Jason Maynard** ([@jasonmaynard8773](https://www.youtube.com/@jasonmaynard8773)) covers scopes, labels, inventory filters, and policy workflow. Required before scope→ACP mapping.
+
+| Video | Watch |
+|-------|-------|
+| Scopes | [YouTube](https://www.youtube.com/watch?v=3KBmanCNm4U) |
+| Labels | [YouTube](https://www.youtube.com/watch?v=NLoZq0wiTU8) |
+| Inventory Filters | [YouTube](https://www.youtube.com/watch?v=fJd6V15UiZM) |
+| ADM & Policy Analysis | [YouTube](https://www.youtube.com/watch?v=Jzzblea25UA) |
+| Dynamic Workloads & Policy | [YouTube](https://www.youtube.com/watch?v=Aajlx7JT2G4) |
+
+Full steps: [`docs/SCOPE-ACP-QUERY-MAPPING.md`](docs/SCOPE-ACP-QUERY-MAPPING.md)
+
+---
 
 | # | Requirement | Notes |
 |---|-------------|--------|
@@ -334,6 +348,7 @@ For **host enforcement timing** validation after agents are deployed, use [**csw
 | `docs/EXECUTIVE-SUMMARY.md` | **One-page executive summary** for CISO / network leadership |
 | `docs/CSW-Secure-Firewall-Executive-Summary.pdf` | PDF export of executive summary |
 | `docs/INTEGRATION-GUIDE.md` | Full customer reference (steps, FAQs, virtual patch, insertion options) |
+| `docs/SCOPE-ACP-QUERY-MAPPING.md` | Scope queries, inventory filters, ACP mapping, Jason Maynard videos |
 | `docs/ARCHITECTURE.md` | Mermaid architecture diagrams for customer presentations |
 | `docs/CSW-Secure-Firewall-Integration-Guide.docx` | Word export for customer hand-off |
 | `docs/CSW-Secure-Firewall-Integration-Guide.pdf` | PDF export |

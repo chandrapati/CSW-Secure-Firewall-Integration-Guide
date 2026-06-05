@@ -15,6 +15,8 @@ date: "2026-06-04"
 
 **Architecture diagrams:** [`ARCHITECTURE.md`](ARCHITECTURE.md) only — do not duplicate diagrams in other docs.
 
+**Scope / query / ACP mapping:** [`SCOPE-ACP-QUERY-MAPPING.md`](SCOPE-ACP-QUERY-MAPPING.md) — scope queries, inventory filters, `WorkloadObj__` dynamic objects, Jason Maynard + Jorge Quintero video paths.
+
 ---
 
 ## Jorge Quintero — 3-part video series
@@ -383,6 +385,8 @@ flow-export destination $nsel.get(0) $nsel.get(1) $nsel.get(2)
 **Official procedure:** [FMC Integration Guide — Connection Settings](https://www.cisco.com/c/en/us/td/docs/security/workload_security/secure_workload/integration/fmc/cisco-secure-workload-and-fmc-integration-guide.html)
 
 ### Step B3 — Map scope to Access Control Policy
+
+> **Prerequisite:** Scope queries committed and inventory filters validated — [SCOPE-ACP-QUERY-MAPPING.md](SCOPE-ACP-QUERY-MAPPING.md).
 
 1. Open FMC connector → **Segmentation** tab → **+ Add**.
 2. **Add ACP Mapping:**
