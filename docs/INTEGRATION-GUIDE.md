@@ -166,60 +166,157 @@ service-policy flow_export_policy global
 
 ### Step A3b — FTD NSEL via FlexConfig (FMC UI)
 
-FTD does **not** have a direct CLI like ASA. NSEL export is configured through **FlexConfig** in FMC. Follow these steps exactly — Part 2 of the Jorge Quintero series ([Watch](https://www.youtube.com/watch?v=xpbg3s0vrcI)) walks through this configuration.
+FTD does **not** expose a direct CLI for NSEL. Export is configured through **FlexConfig** in FMC using a structured set of ACL, Text Objects, and FlexConfig Objects. The entire walkthrough is in Part 2 of the Jorge Quintero series — start at **12:22** ([Watch — jump to 12:22](https://www.youtube.com/watch?v=xpbg3s0vrcI&t=742s)).
 
-#### 1 — Create a FlexConfig Text Object
+There are **five ordered steps**. Do not skip the ACL — it is required by the class-map.
 
-1. In FMC, navigate to **Objects → Object Management → FlexConfig → Text Objects**.
+---
+
+#### Step 1 — Create an Extended Access List (ACL)
+
+This ACL defines which traffic is captured and exported as NSEL records. It is referenced by name in the FlexConfig class-map (Step 3).
+
+1. In FMC, navigate to **Objects → Object Management → Access Lists → Extended**.
+2. Click **Add Extended Access List**.
+3. Name it `flow_csw` (or a meaningful name — you will reference this exact name later).
+4. Click **Add** to create an entry:
+   - **Action:** `Allow`
+   - **Source Networks:** `Any` (or restrict to subnets you want to monitor)
+   - **Destination Networks:** `Any`
+   - **Logging:** Disabled (not needed for NSEL export)
+5. Click **OK**, then **Save**.
+
+> **Why this step matters:** FTD's NSEL export is interest-traffic–driven. The ACL acts as the match criterion in the class-map. Without an ACL, the class-map has nothing to match and no NSEL records are exported.
+
+---
+
+#### Step 2 — Create FlexConfig Text Objects
+
+Text Objects are named variables referenced inside FlexConfig Object bodies. Create two.
+
+**Text Object A — Event type** (`csw_event_type`)
+
+1. Navigate to **Objects → Object Management → FlexConfig → Text Objects**.
 2. Click **Add Text Object**.
-3. Name it (e.g., `CSW_NSEL_Config`).
-4. Paste the NSEL configuration (replace `<INTERFACE>` with the FTD interface facing the Ingest appliance, e.g., `inside`, and `<INGEST_CONNECTOR_IP>` with the Ingest connector IP):
+3. Name: `csw_event_type`
+4. Variable type: **Single** (1 value)
+5. Value: `all`
+6. Click **Save**.
+
+> This sets NSEL to export all event types (flow-create, flow-teardown, flow-denied, flow-update).
+
+**Text Object B — NSEL destination** (`csw_nsel_destination`)
+
+1. Click **Add Text Object**.
+2. Name: `csw_nsel_destination`
+3. Variable type: **Multiple** — set count to **3**
+4. Values (in order):
+   - Value 0: `<EGRESS_INTERFACE>` — FTD interface toward Ingest appliance (e.g., `inside`)
+   - Value 1: `<INGEST_CONNECTOR_IP>` — IP shown on the ASA/Secure Firewall connector in CSW
+   - Value 2: `4729` — UDP port for the Ingest connector
+5. Click **Save**.
+
+> The three values map to: interface, IP, port — exactly as used in `flow-export destination <iface> <ip> <port>`.
+
+---
+
+#### Step 3 — Create FlexConfig Objects
+
+Three FlexConfig Objects are required. Each has its own **Deployment type** — set them exactly as shown.
+
+**Object A — NetFlow parameters** (`csw_nsel_parameters`)
+Deployment: **Once**
+
+1. Navigate to **Objects → Object Management → FlexConfig → FlexConfig Objects**.
+2. Click **Add FlexConfig Object**. Name: `csw_nsel_parameters`.
+3. Set **Deployment** to **Once**.
+4. In the body, FMC ships default `Netflow_Set_Parameters` values — copy that default object and rename it, or enter:
 
 ```text
-flow-export destination <INTERFACE> <INGEST_CONNECTOR_IP> 4729
 flow-export template timeout-rate 1
+flow-export delay flow-create 60
 ```
 
 5. Click **Save**.
 
-> **Note:** The `service-policy global_policy global` is already active by default on FTD — do not add it again via FlexConfig or you will get a conflict.
+---
 
-#### 2 — Create a FlexConfig Object (prepended)
+**Object B — Class map** (`csw_nsel_class_map`)
+Deployment: **Every Time**
 
-1. Navigate to **Objects → Object Management → FlexConfig → FlexConfig Objects**.
-2. Click **Add FlexConfig Object**.
-3. Name it (e.g., `CSW_NSEL_Export`), set type to **Prepended**.
-4. In the body, reference your text object using the FMC variable syntax:
+1. Add a new FlexConfig Object. Name: `csw_nsel_class_map`.
+2. Set **Deployment** to **Every Time** ← critical, do not set to Once.
+3. In the body, type the class-map and reference the ACL from Step 1 using the **Insert → Policy Object → Extended Access List** helper:
 
 ```text
-flow-export destination $CSW_NSEL_Config_line1
-flow-export template timeout-rate 1
-policy-map global_policy
-  class class-default
-    flow-export event-type flow-create destination <INGEST_CONNECTOR_IP>
-    flow-export event-type flow-teardown destination <INGEST_CONNECTOR_IP>
-    flow-export event-type flow-denied destination <INGEST_CONNECTOR_IP>
-    flow-export event-type flow-update destination <INGEST_CONNECTOR_IP>
-    user-statistics accounting
+class-map flow_csw
+  match access-list $csw_acl
 ```
 
-> **Tip:** Many engineers paste the full ASA-style config directly as the FlexConfig Object body (without text object variables) since it is static per device. That is acceptable — just substitute `<INTERFACE>` and `<INGEST_CONNECTOR_IP>` with literal values for each device.
+   When you click **Insert → Policy Object → Extended Access List** and select `flow_csw`, FMC will insert the variable reference automatically. The rendered config on the device will say `match access-list flow_csw`.
 
-#### 3 — Create / update a FlexConfig Policy
+4. Then add the policy-map and reference the event type Text Object (Insert → Text Object → `csw_event_type`, variable name `event`):
+
+```text
+policy-map global_policy
+  class flow_csw
+    flow-export event-type $event.get(0) destination $nsel.get(1)
+```
+
+   Use **Insert → Text Object** for both `csw_event_type` (variable: `event`) and `csw_nsel_destination` (variable: `nsel`).
+
+5. Click **Save**.
+
+> **Preview tip:** Use the **Preview** button before deploying to see the exact CLI that will be pushed to the device. Confirm `match access-list flow_csw` and the correct destination IP appear.
+
+---
+
+**Object C — Flow export destination** (`csw_nsel_flow_destination`)
+Deployment: **Once**
+
+1. Add a new FlexConfig Object. Name: `csw_nsel_flow_destination`.
+2. Set **Deployment** to **Once**.
+3. Body — reference the `csw_nsel_destination` Text Object (Insert → Text Object, variable name `nsel`):
+
+```text
+flow-export destination $nsel.get(0) $nsel.get(1) $nsel.get(2)
+```
+
+   This renders on the device as: `flow-export destination <iface> <IP> 4729`
+
+4. Click **Save**.
+
+> **Deployment type summary:**
+> | Object | Deployment | Reason |
+> |--------|-----------|--------|
+> | `csw_nsel_parameters` | Once | Static tuning — only needs to push once |
+> | `csw_nsel_class_map` | Every Time | Policy-map changes require re-push on each deployment |
+> | `csw_nsel_flow_destination` | Once | Destination is static — only push on first deployment |
+
+---
+
+#### Step 4 — Create / update a FlexConfig Policy
 
 1. Navigate to **Devices → FlexConfig**.
 2. Click **New Policy** (or open the existing FlexConfig policy assigned to your FTDs).
-3. Add `CSW_NSEL_Export` to the **Prepend** list.
+3. Add all three objects to the **Appended FlexConfig** list:
+   - `csw_nsel_parameters`
+   - `csw_nsel_class_map`
+   - `csw_nsel_flow_destination`
 4. Assign the policy to the target FTD device(s) under **Policy Assignments**.
 5. Click **Save**.
 
-#### 4 — Deploy to FTD
+> **Note:** The `service-policy global_policy global` is already active by default on FTD — do not add it again via FlexConfig or you will get a duplicate-policy conflict.
+
+---
+
+#### Step 5 — Deploy to FTD
 
 1. **Deploy → Deployment** in FMC.
-2. Select the FTD device(s) and **Deploy**.
-3. After deployment, verify with:
+2. Select the FTD device(s) and click **Deploy**.
+3. After deployment, verify:
    - FTD CLI (via FMC **Devices → Device Management → CLI**): `show flow-export counters`
-   - CSW **Flow Analysis** — flows from the FTD IP should appear within ~2 minutes.
+   - CSW **Flow Analysis** — flows from the FTD management IP should appear within ~2 minutes.
 
 #### FTD version notes
 
@@ -228,7 +325,7 @@ policy-map global_policy
 | **< 7.4** | FlexConfig only (as above) |
 | **7.4+** | **Platform Settings → NetFlow** in FMC may expose a native UI — check your FMC release notes; FlexConfig remains supported as a fallback |
 
-**Reference:** [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html) (FlexConfig commands match ASA syntax)
+**Reference:** [ASA NetFlow Implementation Guide](https://www.cisco.com/c/en/us/td/docs/security/asa/asa-netflow/asa-netflow.html) (FlexConfig commands match ASA CLI syntax)
 
 ### Step A4 — Validate flow ingestion
 
