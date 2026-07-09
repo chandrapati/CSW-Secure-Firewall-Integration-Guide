@@ -383,7 +383,7 @@ For release-specific behavior, sizing, or licensing, contact your **Cisco Secure
 
 ---
 
-## Related Cisco Secure Workload Resources
+## CSW Integration Guides & Resources
 
 | Repository | Description | Best for |
 |------------|-------------|---------|
