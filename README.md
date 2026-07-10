@@ -31,6 +31,10 @@ Extended use cases from the white paper: **Virtual Patch** (CVE → FMC IPS) and
 
 ## Architecture
 
+![Cisco Secure Workload and Secure Firewall Integration Architecture](csw-secure-firewall-architecture.png)
+
+*Two connectors work together: the **Secure Firewall Connector (NSEL)** on an Ingest appliance receives NetFlow Secure Event Logging flow events from FTD/ASA for agentless visibility and ADM, while the **FMC Connector** pushes L3/L4 rules and Dynamic Objects to FMC, which deploys the access control policy to FTD. In SaaS, a Secure Connector tunnel bridges CSW cloud to the on-prem Ingest/FMC.*
+
 **All diagrams are in one place:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — high-level integration, NSEL/FMC sequence flows, scope↔ACP mapping, insertion options (L2/L3/ACI/cloud), virtual patch, and rapid threat containment.
 
 | Path | Connector | Data direction |
